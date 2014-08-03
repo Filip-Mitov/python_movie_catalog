@@ -1,5 +1,6 @@
 import os
 
+
 from sqlalchemy import create_engine, Column, Integer, String, and_
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -34,48 +35,34 @@ def add_movie(cortege):
         user = Movie(**cortege)
         session.add(user)
         session.commit()
-        session.close()
         return True
     except:
-        session.close()
         return False
 
 def delete_movie(title, year):
     session = Session()
     try:
-        movie = session.query(Movie).filter(and_(Movie.title==title, Movie.year ==year)).one()
+        movie = session.query(Movie).get((title, year))
         session.delete(movie)
         session.commit()
-        session.close()
         return True
     except:
-        print('Delete movie error from form view movie')
-        session.close()
         return False
 
-def edit_movie(title, year, new_title, new_year, genre, rating, description, path):
+def edit_movie(title, year, cortege):
     session = Session()
     try:
-        movie = session.query(Movie).filter(and_(Movie.title==title, Movie.year ==year)).one()
-        movie.title = new_title
-        movie.year = new_year
-        movie.genre = genre
-        movie.rating = rating
-        movie.description = description
-        movie.path = path
+        movie = session.query(Movie).get((title, year))
+        movie.title = cortege[0]
+        movie.year = cortege[1]
+        movie.genre = cortege[2]
+        movie.rating = cortege[3]
+        movie.description = cortege[4]
+        movie.path = cortege[5]
         session.commit()
-        session.close()
         return True
     except:
-        print('Edit movie error')
-        session.close()
         return False
-
-def all_movies():
-    session = Session()
-    movies = session.query(*Movie.__table__.columns).all()
-    session.close()
-    return movies
 
 def path_check():
     session = Session()
@@ -85,10 +72,27 @@ def path_check():
     session.commit()
     session.close()
 
+def all_movies():
+    session = Session()
+    movies = session.query(*Movie.__table__.columns).all()
+    session.close()
+    return movies
+
+def selected_movies(value):
+    session = Session()
+    if value == '':
+        return session.query(*Movie.__table__.columns).all()
+    search_movies = []
+    movies = session.query(*Movie.__table__.columns).all()
+    for movie in movies:
+        if not ''.join(str(movie)).lower().find(value.lower()) == -1:
+            search_movies.append(movie)
+
+    session.close()
+    return search_movies
+
 def printer():
     session = Session()
     for row in session.query(Movie):
         print(row)
     session.close()
-
-# printer()

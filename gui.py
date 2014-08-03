@@ -164,8 +164,8 @@ class FormEditMovie(QDialog):
         self.description_label = QLabel("Description")
         self.description_label.setAlignment(Qt.AlignRight)
 
-        self.path = QPushButton("select dir")
-        self.path.clicked.connect(self.choose_dir)
+        self.path = QPushButton("Select directory")
+        self.path.clicked.connect(self.choose_directory)
         self.path_display = QLabel()
 
         self.button = QPushButton("Edit movie in catalog")
@@ -192,7 +192,7 @@ class FormEditMovie(QDialog):
 
     def edit_cortege(self):
         movie_row = self.get_values()
-        if database.edit_movie(self.cortege[0], self.cortege[1], *movie_row):
+        if database.edit_movie(self.cortege[0], self.cortege[1], movie_row):
             self.close()
 
     def get_values(self):
@@ -220,7 +220,7 @@ class FormEditMovie(QDialog):
         self.description.setText(movie[4])
         self.path_display.setText(movie[5])
 
-    def choose_dir(self):
+    def choose_directory(self):
         dialog = QFileDialog(self, 'Browse movie directory')
         dialog.setFileMode(QFileDialog.Directory)
         dialog.setOption(QFileDialog.ShowDirsOnly)
@@ -232,7 +232,6 @@ class FormViewMovie(QWidget):
 
     def __init__(self, parent=None):
         super(FormViewMovie, self).__init__(parent)
-        self.edit = FormEditMovie()
 
         self.font_keys = QFont()
         self.font_keys.setBold(True)
@@ -310,17 +309,18 @@ class FormViewMovie(QWidget):
         self.set_values(self.edit_dialog())
 
     def edit_dialog(self):
-        self.edit.set_values(self.cortege)
-        self.edit.exec_()
-        return self.edit.get_values()
+        edit = FormEditMovie()
+        edit.set_values(self.cortege)
+        edit.exec_()
+        return edit.get_values()
 
     def delete_cortege(self):
         if database.delete_movie(self.title.text(), self.year.text()):
             self.picture_button.clear()
-            QWidget.disconnect(self.picture_button, SIGNAL('clicked()'), self.show)
+            QWidget.disconnect(
+                self.picture_button, SIGNAL('clicked()'), self.show
+            )
             self.close()
-        else:
-            pass
 
     def set_values(self, movie):
         self.cortege = movie
@@ -334,11 +334,11 @@ class FormViewMovie(QWidget):
     def view_info_button(self):
         self.picture_button = ClicableQLabel()
         self.picture_button.setAlignment(Qt.AlignCenter)
-        self.movie_poster = self.poster_image(self.title.text(), self.path.text())
+        self.movie_poster = self.movie_img(self.title.text(), self.path.text())
         self.picture_button.setPixmap(self.movie_poster)
         QWidget.connect(self.picture_button, SIGNAL('clicked()'), self.show)
 
-    def poster_image(self, title, path):
+    def movie_img(self, title, path):
         for one_file in os.listdir(path):
             if os.path.splitext(one_file)[1].lower() in pixmap_formats:
                 poster_path = os.path.join(path, one_file)
@@ -379,30 +379,36 @@ class MainWindow(QWidget):
         super(MainWindow, self).__init__(parent)
         self.form_add_movie = FormAddMovie()
         self.catalog_view_forms = []
-        self.reload = False
 
         self.button = QPushButton('Add movie to catalog')
         self.button.clicked.connect(self.add_movie_and_update)
 
-        self.scroll_area = self.picture_slideshow()
+        self.search = QLineEdit()
+
+        self.search_button = QPushButton('Search!')
+        self.search_button.clicked.connect(self.search_movie_and_update)
+
+        database.path_check()
+        self.scroll_area = self.picture_slideshow(database.all_movies())
 
         self.grid = QGridLayout()
-        self.grid.addWidget(self.button,0,0)
-        self.grid.addWidget(self.scroll_area,1,0,1,3)
+        self.grid.addWidget(self.button, 0, 0)
+        self.grid.addWidget(self.search, 0, 1)
+        self.grid.addWidget(self.search_button, 0, 2)
+        self.grid.addWidget(self.scroll_area, 1, 0, 1, 3)
 
         self.setWindowTitle('Movie catalog 2014')
         self.setLayout(self.grid)
         self.show()
 
-    def picture_slideshow(self):
+    def picture_slideshow(self, records):
         scroll_area = QScrollArea()
         scroll_area.setBackgroundRole(QPalette.Dark)
         scroll_widget = QWidget()
         scroll_layout = QGridLayout()
         scroll_layout.setDefaultPositioning(4, Qt.Horizontal)
 
-        database.path_check()
-        for record in database.all_movies():
+        for record in records:
             movie_view_form = FormViewMovie()
             movie_view_form.set_values(record)
             self.catalog_view_forms.append(movie_view_form)
@@ -413,7 +419,13 @@ class MainWindow(QWidget):
         scroll_area.setWidget(scroll_widget)
         return scroll_area
 
+    def search_movie_and_update(self):
+        search_word = self.search.text()
+        found_movies = database.selected_movies(search_word)
+        self.scroll_area = self.picture_slideshow(found_movies)
+        self.grid.addWidget(self.scroll_area,1,0,1,3)
+
     def add_movie_and_update(self):
         self.form_add_movie.exec_()
-        self.scroll_area = self.picture_slideshow()
+        self.scroll_area = self.picture_slideshow(database.all_movies())
         self.grid.addWidget(self.scroll_area,1,0,1,3)
