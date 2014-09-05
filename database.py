@@ -22,7 +22,7 @@ class Movie(Base):
     path = Column(String)
 
     def __repr__(self):
-        return '{} {} {} {} {} {}'.format(self.title,self.year,self.genre,self.rating,self.description,self.path)
+        return "('{}', '{}', '{}','{}','{}','{}')".format(self.title,self.year,self.genre,self.rating,self.description,self.path)
 
 
 Base.metadata.create_all(engine)
@@ -90,9 +90,3 @@ def selected_movies(value):
 
     session.close()
     return search_movies
-
-def printer():
-    session = Session()
-    for row in session.query(Movie):
-        print(row)
-    session.close()
