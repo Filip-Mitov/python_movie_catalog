@@ -41,18 +41,21 @@ class BasicElements(object):
         self.title = QLineEdit()
         self.title_label = QLabel("Title")
         self.title_label.setAlignment(Qt.AlignRight)
+
     def element_year(self):
         self.year = QComboBox()
         self.year.addItems([str(year) for year in range(1970, 2021)])
         self.year.setCurrentIndex(44) # Default year is 2014
         self.year_label = QLabel("Year")
         self.year_label.setAlignment(Qt.AlignRight)
+
     def element_genre(self):
         self.genre = QListWidget()
         self.genre.addItems(movie_genres)
         self.genre.setSelectionMode(QAbstractItemView.MultiSelection)
         self.genre_label = QLabel("Genre")
         self.genre_label.setAlignment(Qt.AlignRight)
+
     def element_rating(self):
         self.rating = QComboBox()
         self.rating.addItems(movie_rating)
@@ -377,6 +380,7 @@ class MainWindow(QWidget):
 
         self.setWindowTitle('Movie catalog 2014')
         self.setLayout(self.grid)
+
         self.show()
 
     def picture_slideshow(self, records):
